@@ -56,6 +56,18 @@ published_document_view = lambda eclass: '''function(doc) {{
                           for state in public_revisionStates]))
 
 
+def list_views(collection):
+    """ finds a given collection's `_design`-docs and extracts the view names found inside of them.
+    """
+    desdocs = [collection[name] for name in collection if name.startswith('_design/')]
+    views = []
+    for doc in desdocs:
+        path = doc.id.split('/')[-1]
+        views.extend(map(lambda v:path + '/' + v, doc.get('views', {}).keys()))
+    return views
+
+
+
 def apply_view(collection, view_name):
     """ applies collection-internal view to collection and returns generator. """
     for row in collection.view(view_name):
