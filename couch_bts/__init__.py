@@ -12,19 +12,25 @@ repl_doc_templ = '''{{"source":{{"headers":{{}}, "url":{}}}, "target":{{"headers
 }}'''
 
 
-def connect(url, auth_file):
+def connect(url, auth_file=None, user=None, passwd=None):
     """ connect to a couchdb server at the specified `URL`. Use the contents of JSON file `auth_file` to login.
-    This JSON file is expected to contain a single object with the keys `user` and `pass`. """
-    with open(auth_file, 'r') as authfile:
-        auth = json.load(authfile)
-        try:
-            server = couchdb.Server(url)
-            server.resource.credentials = (auth.get('user'), auth.get('pass'))
-            server.login(auth.get('user'), auth.get('pass'))
-            return server
-        except Exception as e:
-            print('could not login to', server.resource.url)
-            print(e)
+    This JSON file is expected to contain a single object with the keys `user` and `pass`. 
+    Instead of the auth file, one can also just pass a username and a password with the parameters `user` and `passwd`.
+    """
+    if auth_file:
+        with open(auth_file, 'r') as authfile:
+            auth = json.load(authfile)
+    elif user != None and passwd != None:
+        auth = {'user': user, 'pass': passwd}
+        
+    try:
+        server = couchdb.Server(url)
+        server.resource.credentials = (auth.get('user'), auth.get('pass'))
+        server.login(auth.get('user'), auth.get('pass'))
+        return server
+    except Exception as e:
+        print('could not login to', server.resource.url)
+        print(e)
 
 
 
