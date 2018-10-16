@@ -6,6 +6,9 @@ setup(
     name="aaew_couch",
     version=VERSION,
     packages=find_packages(),
+    install_requires=[
+        'CouchDB',
+        ],
 )
 
 
