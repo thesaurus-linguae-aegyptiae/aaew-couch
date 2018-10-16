@@ -9,6 +9,10 @@ setup(
     install_requires=[
         'CouchDB',
         ],
+    extras_require={
+        'progress_bar': ['tqdm'],
+        },
+
 )
 
 

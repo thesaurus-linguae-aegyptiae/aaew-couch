@@ -2,7 +2,12 @@ import re
 import json
 import pprint
 import couchdb
-from tqdm import tqdm
+
+try:
+    from tqdm import tqdm
+    TQDM = True
+except:
+    TQDM = False
 
 
 
@@ -95,9 +100,11 @@ def retrieve_public_documents(collection):
     `visibility`, and `revisionState`.
     Returns a generator. """
     view = collection.query(publication_status_view)
-    with tqdm(total=view.total_rows, desc=collection.name) as progressbar:
+    pb = tqdm(total=view.total_rows, desc=collection.name) if TQDM else None
+    with pb as progressbar:
         for row in view:
-            progressbar.update(1)
+            if progressbar:
+                progressbar.update(1)
             if row.id:
                 yield collection[row.id]
 
