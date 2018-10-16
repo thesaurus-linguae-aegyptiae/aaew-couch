@@ -122,14 +122,18 @@ def all_public_corpora(server):
     Returns a tuple of which the first element is a list of collection
     names, and the seconds element is a list of word list and thesaurus collections. """
     corp = []
+    
+    # go through results from projects view in admin collection and extract each project's
+    # corpora names from its `dbCollections` record
     for row in server['admin'].view('admin/all_projects'):
         project = row.value
         collections = [c.get('collectionName') for c in project.get('dbCollections', [])]
+
+        # rely on each project to specify a prefix string for its collections      
         if project.get('prefix'):
             prefix = project.get('prefix')
-            #print(prefix, '-', project.get('name'))
-            #pprint(collections)
 
+            # add vocabularies (word list and thesaurus collection) if existing and configured
             for suffix in ['wlist', 'ths']:
                 collection_name = '{}_{}'.format(prefix, suffix)
                 if collection_name.format(prefix) in server:
@@ -138,8 +142,10 @@ def all_public_corpora(server):
                             (server[collection_name],
                              suffix))
 
+            # extract `published` (or `transformed_awaiting_update`) corpora from the {prefix}_corpus collection
+            # associated with the project
             corp.extend([(c, 'corpus') for c in
-                         public_corpora_of_project(server, prefix)])
+                         public_corpora_of_project(server, prefix) if c.name in collections])
 
     return corp
 

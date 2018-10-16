@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
-VERSION="0.1a1.dev1"
+VERSION="0.1a2.dev1"
 
 setup(
-    name="aaew-couch-utils",
+    name="aaew_couch",
     version=VERSION,
     packages=find_packages(),
 )
