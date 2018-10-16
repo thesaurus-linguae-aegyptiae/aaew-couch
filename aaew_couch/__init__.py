@@ -11,6 +11,7 @@ except:
 
 
 
+
 rx_url = re.compile(r'^(https?://)(.*)$')
 
 repl_doc_templ = '''{{"source":{{"headers":{{}}, "url":{}}}, "target":{{"headers":{{}}, "url":{}}}, "filter":"{}", "continuous":false, "create_target":false,
@@ -39,18 +40,21 @@ def connect(url, auth_file=None, user=None, passwd=None):
 
 
 
-public_revisionStates = ['published',
+PUBLIC_REVISIONSTATES = ['published',
                          'transformed_awaiting_update',
                          'published-awaiting-update',
                          'published-obsolete']
 
-publication_status_view = '''function(doc) {
-    if (doc.state == 'active' && doc.visibility == 'public' && (doc.revisionState == 'published' || doc.revisionState == 'transformed_awaiting_update' || doc.revisionState == 'published-awaiting-update' || doc.revisionState == 'published-obsolete')) {
+""" can be used as a temporary view that retrieves all published documents from a collection. """
+TEMP_VIEW_PUB_DOC_IDS = '''function(doc) {{
+    if (doc.state == 'active' && doc.visibility == 'public' && ({})) {{
         emit(doc.id);
-    }
-}'''
+    }}
+}}'''.format(' || '.join(["doc.revisionState == '{}'".format(state)
+                          for state in PUBLIC_REVISIONSTATES]))
 
-published_document_view = lambda eclass: '''function(doc) {{
+""" lambda function that returns a temporary view that retrieves all published documents with the specified eClass from a collection. """
+temp_view_published_docs = lambda eclass: '''function(doc) {{
     if (doc.eClass.split('/').pop() == '{}') {{
         if (doc.state == 'active' && doc.visibility == 'public' && ({})) {{
             emit(doc.id, doc);
@@ -58,7 +62,7 @@ published_document_view = lambda eclass: '''function(doc) {{
     }}
 }}'''.format(eclass,
              ' || '.join(["doc.revisionState == '{}'".format(state)
-                          for state in public_revisionStates]))
+                          for state in PUBLIC_REVISIONSTATES]))
 
 
 def list_views(collection):
@@ -90,7 +94,7 @@ def is_document_public(document):
     """ checks whether document `visibility` and `revisionState` match requirements to
     be considered ready for publication. """
     if document.get('visibility') == 'public':
-        return document.get('revisionState') in public_revisionStates
+        return document.get('revisionState') in PUBLIC_REVISIONSTATES
     return False
 
 
@@ -155,5 +159,23 @@ def all_public_corpora(server):
                          public_corpora_of_project(server, prefix) if c.name in collections])
 
     return corp
+
+
+
+
+__all__ = [
+        'PUBLIC_REVISIONSTATES',
+        'TEMP_VIEW_PUB_DOC_IDS',
+        'temp_view_published_docs',
+        'connect',
+        'list_views',
+        'apply_view',
+        'apply_temp_view',
+        'is_document_public',
+        'retrieve_public_documents',
+        'all_public_corpora',
+        'public_corpora_of_project']
+
+
 
 
