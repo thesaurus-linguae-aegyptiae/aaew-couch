@@ -126,17 +126,29 @@ def public_corpora_of_project(server, prefix):
     return [server[c] for c in corpus_list if c in server]
 
 
-def all_public_corpora(server):
+
+def get_projects(server):
+    """ returns list of project prefixes """
+    return [row.value for row in server['admin'].view('admin/all_active_projects')]
+
+
+
+def all_public_collections(server):
     """ Retrieves public corpora of all projects found in the `admin/all_projects`
     view on the `admin` collection on couchdb instance `aaew64`, by using the
     `public_corpora_of_project` function.
     Returns a tuple of which the first element is a list of collection
     names, and the seconds element is a list of word list and thesaurus collections. """
-    corp = []
+    corp = {
+            'corpus': [],
+            'wlist': [],
+            'ths', [],
+            'admin': []
+            }
     
     # go through results from projects view in admin collection and extract each project's
     # corpora names from its `dbCollections` record
-    for row in server['admin'].view('admin/all_projects'):
+    for row in server['admin'].view('admin/all_active_projects'):
         project = row.value
         collections = [c.get('collectionName') for c in project.get('dbCollections', [])]
 
@@ -145,20 +157,24 @@ def all_public_corpora(server):
             prefix = project.get('prefix')
 
             # add vocabularies (word list and thesaurus collection) if existing and configured
-            for suffix in ['wlist', 'ths']:
+            for suffix in ['wlist', 'ths', 'admin']:
                 collection_name = '{}_{}'.format(prefix, suffix)
                 if collection_name.format(prefix) in server:
                     if collection_name.format(prefix) in collections:
-                        corp.append(
-                            (server[collection_name],
-                             suffix))
+                        corp[suffix].append(
+                            server[collection_name])
 
             # extract `published` (or `transformed_awaiting_update`) corpora from the {prefix}_corpus collection
             # associated with the project
-            corp.extend([(c, 'corpus') for c in
-                         public_corpora_of_project(server, prefix) if c.name in collections])
-
+            corp['corpus'].extend(
+                    [c for c in public_corpora_of_project(server, prefix) 
+                        if c.name in collections]
+                    )
+    
     return corp
+
+
+
 
 
 
@@ -169,6 +185,7 @@ __all__ = [
         'temp_view_published_docs',
         'connect',
         'list_views',
+        'get_projects'
         'apply_view',
         'apply_temp_view',
         'is_document_public',

@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION="0.1a3.dev1"
+VERSION="0.1.1"
 
 setup(
     name="aaew_couch",
