@@ -142,7 +142,7 @@ def all_public_collections(server):
     corp = {
             'corpus': [],
             'wlist': [],
-            'ths', [],
+            'ths': [],
             'admin': []
             }
     
