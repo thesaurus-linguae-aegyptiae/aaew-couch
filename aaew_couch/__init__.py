@@ -1,6 +1,7 @@
 import re
 import json
 import pprint
+import logging
 import couchdb
 
 try:
@@ -10,6 +11,7 @@ except:
     TQDM = False
 
 
+logging.basicConfig(level=logging.INFO)
 
 
 rx_url = re.compile(r'^(https?://)(.*)$')
@@ -115,16 +117,19 @@ def apply_view(collection, view_name):
             yield row.id
 
 
-def apply_temp_view(collection, view):
+def apply_temp_view(collection, view_function):
     """ takes a view function as a string and applies it to the collection.
     Is a generator. """
-    for row in collection.query(view):
-        if row.value:
-            value = row.value
-            value['id'] = row.id
-            yield row.value
-        else:
-            yield row.id
+    try:
+        for row in collection.query(view_function):
+            if row.value:
+                value = row.value
+                value['id'] = row.id
+                yield row.value
+            else:
+                yield row.id
+    except couchdb.http.ServerError as e:
+        raise ValueError('server cannot parse view function')
 
 
 def is_document_public(document):

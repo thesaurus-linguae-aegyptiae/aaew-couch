@@ -20,5 +20,8 @@ def test_public_documents_in_collection():
     doc = next(doc_gen)
     assert doc is not None
 
+
+    
+
      
 

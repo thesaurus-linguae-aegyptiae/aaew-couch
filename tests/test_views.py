@@ -48,4 +48,21 @@ def test_temp_view_filter_eclass_spec_fields():
     assert d.get('id') is not None
 
 
+def test_temp_view_syntax_error():
+    from aaew_couch import connect, apply_temp_view
+    server = connect('http://aaew64.bbaw.de:9589',
+            auth_file='auth.json')
+    view_func = 'function(doc){'
+    view = apply_temp_view(server['admin'], view_func)
+    with pytest.raises(ValueError):
+        next(view)
+ 
 
+def test_project_view():
+    from aaew_couch import connect, get_projects
+    server = connect('http://aaew64.bbaw.de:9589',
+            auth_file='auth.json')
+    projects = get_projects(server)
+    assert projects is not None
+    assert len(projects) > 0
+     
