@@ -137,10 +137,12 @@ def is_document_public(document):
 
 def retrieve_public_documents(collection):
     """ Generates a collection's list of documents filtered by the ad-hoc view
-    `publication_status_view` that takes into account each document's `state`,
+    `TEMP_VIEW_PUB_DOC_IDS` that takes into account each document's `state`,
     `visibility`, and `revisionState`.
-    Returns a generator. """
-    view = collection.query(publication_status_view)
+    Returns a generator that downloads each document one by one, which is preposterously
+    slow, but makes sure that huge corpora won't cause heap overflows.
+    """
+    view = collection.query(TEMP_VIEW_PUB_DOC_IDS)
     pb = tqdm(total=view.total_rows, desc=collection.name) if TQDM else None
     with pb as progressbar:
         for row in view:
@@ -155,11 +157,17 @@ def public_corpora_of_project(server, prefix):
     or 'transformed_awaiting_update'. """
     corpus_list = []
     if '{}_corpus'.format(prefix) in server:
-        corpora_view = server['{}_corpus'.format(prefix)].view('corpus/all_active_btstextcorpus')
+        corpora_view = server['{}_corpus'.format(prefix)].view(
+                'corpus/all_active_btstextcorpus')
         for row in corpora_view:
             corpus = row.value
             if is_document_public(corpus):
-                corpus_list.append('{}_corpus_{}'.format(prefix, corpus.get('corpusPrefix')))
+                corpus_list.append(
+                        '{}_corpus_{}'.format(
+                            prefix,
+                            corpus.get('corpusPrefix')
+                            )
+                        )
     return [server[c] for c in corpus_list if c in server]
 
 
