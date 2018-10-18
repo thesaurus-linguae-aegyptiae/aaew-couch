@@ -27,16 +27,21 @@ def connect(url, auth_file=None, user=None, passwd=None):
         with open(auth_file, 'r') as authfile:
             auth = json.load(authfile)
     elif user != None and passwd != None:
-        auth = {'user': user, 'pass': passwd}
+        auth = {'user': user,
+                'pass': passwd}
+    else:
+        auth = None
         
     try:
         server = couchdb.Server(url)
-        server.resource.credentials = (auth.get('user'), auth.get('pass'))
-        server.login(auth.get('user'), auth.get('pass'))
+        if auth:
+            server.resource.credentials = (auth.get('user'), auth.get('pass'))
+            server.login(auth.get('user'), auth.get('pass'))
+        server.version()
         return server
     except Exception as e:
-        print('could not login to', server.resource.url)
-        print(e)
+        raise ConnectionError('could not login to {}: {}'.format(
+            server.resource.url, e))
 
 
 
@@ -53,16 +58,14 @@ TEMP_VIEW_PUB_DOC_IDS = '''function(doc) {{
 }}'''.format(' || '.join(["doc.revisionState == '{}'".format(state)
                           for state in PUBLIC_REVISIONSTATES]))
 
-""" lambda function that returns a temporary view that retrieves all published documents with the specified eClass from a collection. """
-temp_view_published_docs = lambda eclass: '''function(doc) {{
+_temp_view_published_docs_template = '''function(doc) {{
     if (doc.eClass.split('/').pop() == '{}') {{
         if (doc.state == 'active' && doc.visibility == 'public' && ({})) {{
-            emit(doc.id, doc);
+            emit(doc.id{});
         }}
     }}
-}}'''.format(eclass,
-             ' || '.join(["doc.revisionState == '{}'".format(state)
-                          for state in PUBLIC_REVISIONSTATES]))
+}}'''
+
 
 
 def list_views(collection):
@@ -76,18 +79,52 @@ def list_views(collection):
     return views
 
 
+def temp_view_published_docs(eclass, *fields):
+    """ Returns a temporary view function string that can be used to retrieve all published 
+    documents with a specified `eClass`-suffix from a collection. 
+    By default, only the `doc.id` field is being selected by this view function. To receive
+    a different selection of `doc` fields, those can be specified as string value parameters in
+    arbitrary numbers. `doc.id` will be selected no matter what tho. The fields to be selected
+    have to start with '`doc`', but that means that it is also possible to request the whole
+    document.
+    The returned view function string can be used with `apply_temp_view`. """
+    return _temp_view_published_docs_template.format(
+            eclass,
+            ' || '.join(map(
+                lambda state: "doc.revisionState == '{}'".format(state),
+                PUBLIC_REVISIONSTATES)
+                ),
+            ', doc' if 'doc' in fields \
+                else ', {{{}}}'.format(
+                ', '.join(map(
+                    lambda f: "'{}': {}".format('.'.join(f.split('.')[1:]), f),
+                    fields)
+                    )
+                ) if len(fields) > 0 else ''
+            )
+
 
 def apply_view(collection, view_name):
     """ applies collection-internal view to collection and returns generator. """
     for row in collection.view(view_name):
-        yield row.value
+        if row.value:
+            value = row.value
+            value['id'] = row.id
+            yield row.value
+        else:
+            yield row.id
 
 
 def apply_temp_view(collection, view):
     """ takes a view function as a string and applies it to the collection.
     Is a generator. """
     for row in collection.query(view):
-        yield row.value
+        if row.value:
+            value = row.value
+            value['id'] = row.id
+            yield row.value
+        else:
+            yield row.id
 
 
 def is_document_public(document):
