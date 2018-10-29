@@ -149,12 +149,12 @@ def retrieve_public_documents(collection):
     """
     view = collection.query(TEMP_VIEW_PUB_DOC_IDS)
     pb = tqdm(total=view.total_rows, desc=collection.name) if TQDM else None
-    with pb as progressbar:
-        for row in view:
-            if progressbar:
+    for row in view:
+        if row.id:
+            yield collection[row.id]
+            if pb:
                 progressbar.update(1)
-            if row.id:
-                yield collection[row.id]
+
 
 
 def public_corpora_of_project(server, prefix):

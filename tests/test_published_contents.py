@@ -21,6 +21,16 @@ def test_public_documents_in_collection():
     assert doc is not None
 
 
+def test_published_document_retrieval_without_pb():
+    import aaew_couch
+    aaew_couch.tqdm = None
+    aaew_couch.TQDM = False
+    server = aaew_couch.connect('http://aaew64.bbaw.de:9589',
+            auth_file='auth.json')
+    wlg = aaew_couch.retrieve_public_documents(server['aaew_wlist'])
+    assert wlg is not None
+    lemma = next(wlg)
+    assert lemma is not None
     
 
      
