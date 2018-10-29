@@ -17,15 +17,15 @@ class PyTest(TestCommand):
         sys.exit(errno)
         
 
-VERSION="0.1.6.dev1"
+VERSION="0.1.7.dev1"
 
 
 setup(
-    name="aaew_couch",
+    name="aaew-couch",
     version=VERSION,
     packages=find_packages(),
     install_requires=[
-        'CouchDB',
+        'couchdb',
         ],
     extras_require={
         'progress_bar': ['tqdm'],
