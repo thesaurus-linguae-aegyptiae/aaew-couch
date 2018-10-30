@@ -65,4 +65,13 @@ def test_project_view():
     projects = get_projects(server)
     assert projects is not None
     assert len(projects) > 0
-     
+
+
+def test_btsusers_views():
+    from aaew_couch import connect, all_active_btsusers
+    server = connect('http://aaew64.bbaw.de:9589',
+            auth_file='auth.json')
+    usergen = all_active_btsusers(server)
+    assert next(usergen) is not None
+    assert next(usergen).get('eClass').endswith('BTSUser')
+ 

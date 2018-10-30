@@ -220,9 +220,16 @@ def all_public_collections(server):
                     [c for c in public_corpora_of_project(server, prefix) 
                         if c.name in collections]
                     )
-    
     return corp
 
+
+def all_active_btsusers(server, usergroups=True):
+    """ returns a generator that produces all `BTSUser` documents from the server's
+    `admin` collection, and, by default, all `BTSUserGroups` as well, unless the parameter
+    `usergroups` is set to `False`. """
+    for viewname in ['admin/all_active_btsusers', 'admin/all_active_btsusers']:
+        for d in apply_view(server['admin'], viewname):
+            yield d
 
 
 
@@ -241,7 +248,8 @@ __all__ = [
         'is_document_public',
         'retrieve_public_documents',
         'all_public_corpora',
-        'public_corpora_of_project']
+        'public_corpora_of_project',
+        'all_active_btsusers']
 
 
 
