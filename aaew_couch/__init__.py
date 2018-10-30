@@ -227,8 +227,10 @@ def all_active_btsusers(server, usergroups=True):
     """ returns a generator that produces all `BTSUser` documents from the server's
     `admin` collection, and, by default, all `BTSUserGroups` as well, unless the parameter
     `usergroups` is set to `False`. """
-    for viewname in ['admin/all_active_btsusers', 'admin/all_active_btsusers']:
-        for d in apply_view(server['admin'], viewname):
+    for d in apply_view(server['admin'], 'admin/all_active_btsusers'):
+        yield d
+    if usergroups:
+        for d in apply_view(server['admin'], 'admin/all_active_btsusergroups'):
             yield d
 
 

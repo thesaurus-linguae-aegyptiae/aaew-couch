@@ -74,4 +74,11 @@ def test_btsusers_views():
     usergen = all_active_btsusers(server)
     assert next(usergen) is not None
     assert next(usergen).get('eClass').endswith('BTSUser')
+    assert any(map(lambda d:d.get('eClass').endswith('BTSUserGroup'),
+        usergen))
+    usergen = all_active_btsusers(server, usergroups=False)
+    assert not any(map(lambda d:d.get('eClass').endswith('BTSUserGroup'),
+        usergen))
+
+
  
