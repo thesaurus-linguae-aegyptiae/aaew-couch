@@ -9,6 +9,7 @@ try:
 except:
     TQDM = False
 
+VIEW_WINDOW_SIZE = 1000
 
 REPL_DOC_TEMPL = '''{{"source":{{"headers":{{}}, "url":{}}}, "target":{{"headers":{{}}, "url":{}}}, "filter":"{}", "continuous":false, "create_target":false,
 }}'''
@@ -101,29 +102,78 @@ def temp_view_published_docs(eclass, *fields):
 
 
 def apply_view(collection, view_name):
-    """ applies collection-internal view to collection and returns generator. """
-    for row in collection.view(view_name):
-        if row.value:
-            value = row.value
-            value['id'] = row.id
-            yield row.value
-        else:
-            yield row.id
-
-
-def apply_temp_view(collection, view_function):
-    """ takes a view function as a string and applies it to the collection.
-    Is a generator. """
-    try:
-        for row in collection.query(view_function):
+    """ applies collection-internal view to collection and returns generator.
+    """
+    skip = 0
+    results_pending = True
+    while results_pending:
+        """ query database collection with stored view for a limited number
+            of results """
+        view_result = collection.view(
+                view_name,
+                skip=skip,
+                limit=VIEW_WINDOW_SIZE)
+        """ see if we need to query the view another time:
+            i.e. if we have less results than set limit """
+        results_pending = skip + len(view_result.rows) < view_result.total_rows
+        """ move window for upcoming query invocation """
+        skip += VIEW_WINDOW_SIZE
+        """ produce results """
+        for row in view_result.rows:
             if row.value:
                 value = row.value
                 value['id'] = row.id
                 yield row.value
             else:
                 yield row.id
-    except couchdb.http.ServerError as e:
-        raise ValueError('server cannot parse view function')
+
+
+def view_result_count(collection, view):
+    """ Returns the number of rows that would be returned when a given view
+    is queried on that database collection.
+
+    Both view names and view functions can be passed. The function determines
+    what the parameter value actually is by looking it up in the collection's
+    view list. """
+    func = collection.view if view in list_views(collection) else collection.query
+    try:
+        view_result = func(view, limit=0)
+        return view_result.total_rows
+    except:
+        return -1
+
+
+def apply_temp_view(collection, view_function):
+    """ takes a view function as a string and applies it to the collection.
+    Is a generator.
+    """
+    skip = 0
+    results_pending = True
+    while results_pending:
+        """ query database collection with temporary view for limited number
+            of results """
+        try:
+            view_result = collection.query(
+                    view_function,
+                    skip=skip,
+                    limit=VIEW_WINDOW_SIZE)
+            """ see if we need to query the view another time:
+                i.e. if we have less results than set limit """
+            results_pending = skip + len(view_result.rows) < view_result.total_rows
+        except couchdb.http.ServerError as e:
+            raise ValueError('server cannot execute view')
+            return
+
+        """ move window for upcoming query invocation """
+        skip += VIEW_WINDOW_SIZE
+        """ produce results """
+        for row in view_result.rows:
+            if row.value:
+                value = row.value
+                value['id'] = row.id
+                yield row.value
+            else:
+                yield row.id
 
 
 def is_document_public(document):
@@ -241,6 +291,7 @@ __all__ = [
         'get_projects'
         'apply_view',
         'apply_temp_view',
+        'view_result_count',
         'is_document_public',
         'retrieve_public_documents',
         'all_public_corpora',

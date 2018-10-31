@@ -81,4 +81,19 @@ def test_btsusers_views():
         usergen))
 
 
- 
+def test_view_result_counts():
+    from aaew_couch import connect, view_result_count, temp_view_published_docs
+    server = connect('http://aaew64.bbaw.de:9589',
+            auth_file='auth.json')
+    assert view_result_count(
+            server['aaew_corpus_bbawtestcorpus'],
+            'project_corpus/all_active_thsentry_objects') < 1
+    assert view_result_count(
+            server['aaew_ths'],
+            'ths/all_active_thsentry_objects') > 1
+    temp_view = temp_view_published_docs('BTSText',
+            'doc.name', 'doc.type')
+    assert view_result_count(
+            server['aaew_corpus_bbawtestcorpus'],
+            temp_view) > 0
+  
