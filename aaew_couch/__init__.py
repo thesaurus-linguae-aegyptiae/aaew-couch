@@ -16,10 +16,12 @@ REPL_DOC_TEMPL = '''{{"source":{{"headers":{{}}, "url":{}}}, "target":{{"headers
 
 
 def connect(url, auth_file=None, user=None, passwd=None):
-    """ connect to a couchdb server at the specified `URL`. Use the contents of JSON file `auth_file` to login.
-    This JSON file is expected to contain a single object with the keys `user` and `pass`. 
-    Instead of the auth file, one can also just pass a username and a password with the parameters `user` and `passwd`.
-    """
+    """ connect to a couchdb server at the specified `URL`.
+
+    Uses the contents of JSON file `auth_file` to login.  This JSON file is
+    expected to contain a single object with the keys `user` and `pass`.
+    Instead of the auth file, one can also just pass a username and a password
+    with the parameters `user` and `passwd`.  """
     if auth_file:
         with open(auth_file, 'r') as authfile:
             auth = json.load(authfile)
@@ -66,8 +68,8 @@ _temp_view_published_docs_template = '''function(doc) {{
 
 
 def list_views(collection):
-    """ finds a given collection's `_design`-docs and extracts the view names found inside of them.
-    """
+    """ finds a given collection's `_design`-docs and extracts the view names
+    found inside of them.  """
     desdocs = [collection[name] for name in collection if name.startswith('_design/')]
     views = []
     for doc in desdocs:
@@ -77,13 +79,17 @@ def list_views(collection):
 
 
 def temp_view_published_docs(eclass, *fields):
-    """ Returns a temporary view function string that can be used to retrieve all published 
-    documents with a specified `eClass`-suffix from a collection. 
-    By default, only the `doc.id` field is being selected by this view function. To receive
-    a different selection of `doc` fields, those can be specified as string value parameters in
-    arbitrary numbers. `doc.id` will be selected no matter what tho. The fields to be selected
-    have to start with '`doc`', but that means that it is also possible to request the whole
+    """ Returns a temporary view function string that can be used to retrieve
+    all published documents with a specified `eClass`-suffix from a
+    collection.
+
+    By default, only the `doc.id` field is being selected by this view
+    function.  To receive a different selection of `doc` fields, those can be
+    specified as string value parameters in arbitrary numbers. `doc.id` will
+    be selected no matter what tho. The fields to be selected have to start
+    with '`doc`', but that means that it is also possible to request the whole
     document.
+
     The returned view function string can be used with `apply_temp_view`. """
     return _temp_view_published_docs_template.format(
             eclass,
@@ -94,7 +100,9 @@ def temp_view_published_docs(eclass, *fields):
             ', doc' if 'doc' in fields \
                 else ', {{{}}}'.format(
                 ', '.join(map(
-                    lambda f: "'{}': {}".format('.'.join(f.split('.')[1:]), f),
+                    lambda f: "'{}': {}".format(
+                        '.'.join(f.split('.')[1:]),
+                        f),
                     fields)
                     )
                 ) if len(fields) > 0 else ''
@@ -177,8 +185,8 @@ def apply_temp_view(collection, view_function):
 
 
 def is_document_public(document):
-    """ checks whether document `visibility` and `revisionState` match requirements to
-    be considered ready for publication. """
+    """ checks whether document `visibility` and `revisionState` match
+    requirements to be considered ready for publication. """
     if document.get('visibility') == 'public':
         return document.get('revisionState') in PUBLIC_REVISIONSTATES
     return False
@@ -188,8 +196,10 @@ def retrieve_public_documents(collection):
     """ Generates a collection's list of documents filtered by the ad-hoc view
     `TEMP_VIEW_PUB_DOC_IDS` that takes into account each document's `state`,
     `visibility`, and `revisionState`.
-    Returns a generator that downloads each document one by one, which is preposterously
-    slow, but makes sure that huge corpora won't cause heap overflows.
+
+    Returns a generator that downloads each document one by one, which is
+    preposterously slow, but makes sure that huge corpora won't cause heap
+    overflows.
     """
     view = collection.query(TEMP_VIEW_PUB_DOC_IDS)
     pb = tqdm(total=view.total_rows, desc=collection.name) if TQDM else None
@@ -228,11 +238,11 @@ def get_projects(server):
 
 
 def all_public_collections(server):
-    """ Retrieves public corpora of all projects found in the `admin/all_projects`
-    view on the `admin` collection on couchdb instance `aaew64`, by using the
-    `public_corpora_of_project` function.
-    Returns a tuple of which the first element is a list of collection
-    names, and the seconds element is a list of word list and thesaurus collections. """
+    """ Retrieves public corpora of all projects found in the
+    `admin/all_projects` view on the `admin` collection on couchdb instance
+    `aaew64`, by using the `public_corpora_of_project` function.  Returns a
+    tuple of which the first element is a list of collection names, and the
+    seconds element is a list of word list and thesaurus collections. """
     corp = {
             'corpus': [],
             'wlist': [],
@@ -244,9 +254,10 @@ def all_public_collections(server):
     # corpora names from its `dbCollections` record
     for row in server['admin'].view('admin/all_active_projects'):
         project = row.value
-        collections = [c.get('collectionName') for c in project.get('dbCollections', [])]
+        collections = [c.get('collectionName') for c in project.get(
+            'dbCollections', [])]
 
-        # rely on each project to specify a prefix string for its collections      
+        # rely on each project to specify a prefix string for its collections
         if project.get('prefix'):
             prefix = project.get('prefix')
 
@@ -268,13 +279,15 @@ def all_public_collections(server):
 
 
 def all_active_btsusers(server, usergroups=True):
-    """ returns a generator that produces all `BTSUser` documents from the server's
-    `admin` collection, and, by default, all `BTSUserGroups` as well, unless the parameter
-    `usergroups` is set to `False`. """
+    """ returns a generator that produces all `BTSUser` documents from the
+    server's `admin` collection, and, by default, all `BTSUserGroups` as well,
+    unless the parameter `usergroups` is set to `False`. """
     for d in apply_view(server['admin'], 'admin/all_active_btsusers'):
         yield d
     if usergroups:
-        for d in apply_view(server['admin'], 'admin/all_active_btsusergroups'):
+        for d in apply_view(
+                server['admin'],
+                'admin/all_active_btsusergroups'):
             yield d
 
 

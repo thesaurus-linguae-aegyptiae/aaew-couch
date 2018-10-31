@@ -17,7 +17,7 @@ class PyTest(TestCommand):
         sys.exit(errno)
         
 
-VERSION="0.1.9.dev1"
+VERSION="0.1.9.dev2"
 
 
 setup(
