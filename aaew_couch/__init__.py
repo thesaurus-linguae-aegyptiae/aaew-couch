@@ -1,7 +1,6 @@
 import re
 import json
 import pprint
-import logging
 import couchdb
 
 try:
@@ -11,12 +10,7 @@ except:
     TQDM = False
 
 
-logging.basicConfig(level=logging.INFO)
-
-
-rx_url = re.compile(r'^(https?://)(.*)$')
-
-repl_doc_templ = '''{{"source":{{"headers":{{}}, "url":{}}}, "target":{{"headers":{{}}, "url":{}}}, "filter":"{}", "continuous":false, "create_target":false,
+REPL_DOC_TEMPL = '''{{"source":{{"headers":{{}}, "url":{}}}, "target":{{"headers":{{}}, "url":{}}}, "filter":"{}", "continuous":false, "create_target":false,
 }}'''
 
 
