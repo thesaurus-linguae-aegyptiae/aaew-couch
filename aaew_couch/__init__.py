@@ -9,7 +9,7 @@ try:
 except:
     TQDM = False
 
-VIEW_WINDOW_SIZE = 1000
+VIEW_WINDOW_SIZE = 3000
 
 REPL_DOC_TEMPL = '''{{"source":{{"headers":{{}}, "url":{}}}, "target":{{"headers":{{}}, "url":{}}}, "filter":"{}", "continuous":false, "create_target":false,
 }}'''
