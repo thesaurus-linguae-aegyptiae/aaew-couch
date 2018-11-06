@@ -9,7 +9,7 @@ try:
 except:
     TQDM = False
 
-VIEW_WINDOW_SIZE = 3000
+VIEW_WINDOW_SIZE = 600
 
 REPL_DOC_TEMPL = '''{{"source":{{"headers":{{}}, "url":{}}}, "target":{{"headers":{{}}, "url":{}}}, "filter":"{}", "continuous":false, "create_target":false,
 }}'''
@@ -153,7 +153,8 @@ def view_result_count(collection, view):
 
 def apply_temp_view(collection, view_function):
     """ takes a view function as a string and applies it to the collection.
-    Is a generator.
+    Is a generator that returns either the object emitted by the view function,
+    or the id of each documents in the results (whatever applicable).
     """
     skip = 0
     results_pending = True
