@@ -5,7 +5,7 @@ name = "pypi"
 
 [dev-packages]
 pytest = "*"
-aaew-couch = {editable = true, path = "."}
+black = "*"
 
 [packages]
 couchdb = "*"
