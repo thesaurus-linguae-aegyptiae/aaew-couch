@@ -10,7 +10,7 @@ def test_connect_with_auth_missing():
     from aaew_couch import connect
     with pytest.raises(ConnectionError):
         server = connect('http://aaew64.bbaw.de:9589')
-    
+
 
 def test_connect_with_auth():
     from aaew_couch import connect
@@ -56,7 +56,7 @@ def test_temp_view_syntax_error():
     view = apply_temp_view(server['admin'], view_func)
     with pytest.raises(ValueError):
         next(view)
- 
+
 
 def test_project_view():
     from aaew_couch import connect, get_projects
@@ -93,7 +93,8 @@ def test_view_result_counts():
             'ths/all_active_thsentry_objects') > 1
     temp_view = temp_view_published_docs('BTSText',
             'doc.name', 'doc.type')
+    #XXX must be admin
     assert view_result_count(
             server['aaew_corpus_bbawtestcorpus'],
             temp_view) > 0
-  
+

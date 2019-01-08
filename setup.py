@@ -15,9 +15,9 @@ class PyTest(TestCommand):
         import pytest
         errno = pytest.main(shlex.split(self.pytest_args))
         sys.exit(errno)
-        
 
-VERSION="0.1.11.dev1"
+
+VERSION="0.1.12.dev0"
 
 
 setup(

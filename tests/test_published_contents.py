@@ -31,7 +31,3 @@ def test_published_document_retrieval_without_pb():
     assert wlg is not None
     lemma = next(wlg)
     assert lemma is not None
-    
-
-     
-

@@ -139,13 +139,15 @@ def apply_view(collection, view_name):
                 yield row.id
 
 
+#XXX problem: only possible as admin
 def view_result_count(collection, view):
     """ Returns the number of rows that would be returned when a given view
     is queried on that database collection.
 
     Both view names and view functions can be passed. The function determines
     what the parameter value actually is by looking it up in the collection's
-    view list. """
+    view list.
+    """
     func = collection.view if view in list_views(collection) else collection.query
     try:
         view_result = func(view, limit=0)
@@ -216,7 +218,6 @@ def retrieve_public_documents(collection):
 def public_corpora_of_project(server, prefix):
     """ Extract public `BTSTextCorpus` objects with revision state 'published'
     or 'transformed_awaiting_update'. """
-    corpus_list = []
     if "{}_corpus".format(prefix) in server:
         corpora_view = server["{}_corpus".format(prefix)].view(
             "corpus/all_active_btstextcorpus"
@@ -224,10 +225,15 @@ def public_corpora_of_project(server, prefix):
         for row in corpora_view:
             corpus = row.value
             if is_document_public(corpus):
-                corpus_list.append(
-                    "{}_corpus_{}".format(prefix, corpus.get("corpusPrefix"))
+                collection_name = "{}_corpus_{}".format(
+                    prefix,
+                    corpus.get("corpusPrefix")
                 )
-    return [server[c] for c in corpus_list if c in server]
+                if collection_name in server:
+                    try:
+                        yield server[collection_name]
+                    except:
+                        pass
 
 
 def get_projects(server):
@@ -260,7 +266,10 @@ def all_public_collections(server):
                 collection_name = "{}_{}".format(prefix, suffix)
                 if collection_name.format(prefix) in server:
                     if collection_name.format(prefix) in collections:
-                        corp[suffix].append(server[collection_name])
+                        try:
+                            corp[suffix].append(server[collection_name])
+                        except:
+                            pass
 
             # extract `published` (or `transformed_awaiting_update`) corpora from the {prefix}_corpus collection
             # associated with the project
