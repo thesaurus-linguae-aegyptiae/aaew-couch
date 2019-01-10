@@ -82,7 +82,11 @@ def test_btsusers_views():
 
 
 def test_view_result_counts():
-    from aaew_couch import connect, view_result_count, temp_view_published_docs
+    from aaew_couch import (
+        connect,
+        view_result_count,
+        temp_view_published_docs
+    )
     server = connect('http://aaew64.bbaw.de:9589',
             auth_file='auth.json')
     assert view_result_count(
@@ -97,4 +101,23 @@ def test_view_result_counts():
     assert view_result_count(
             server['aaew_corpus_bbawtestcorpus'],
             temp_view) > 0
+
+
+def test_view_paged_window_size_adjustment():
+    import aaew_couch as c
+    server = c.connect('http://aaew64.bbaw.de:9589',
+            auth_file='auth.json')
+    collection = 'aaew_wlist'
+    c.VIEW_WINDOW_SIZE=50000
+    temp_view = c.temp_view_published_docs('BTSLemmaEntry', 'doc')
+    total = c.view_result_count(
+        server[collection],
+        temp_view
+    )
+    count = 0
+    for doc in c.apply_temp_view(server[collection], temp_view):
+        count += 1
+    assert count == total
+
+
 

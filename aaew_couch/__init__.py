@@ -1,7 +1,10 @@
 import re
 import json
-import pprint
+import logging
 import couchdb
+
+logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger(__name__)
 
 try:
     from tqdm import tqdm
@@ -10,7 +13,7 @@ try:
 except:
     TQDM = False
 
-VIEW_WINDOW_SIZE = 600
+VIEW_WINDOW_SIZE = 512
 
 REPL_DOC_TEMPL = """{{"source":{{"headers":{{}}, "url":{}}}, "target":{{"headers":{{}}, "url":{}}}, "filter":"{}", "continuous":false, "create_target":false,
 }}"""
@@ -120,15 +123,20 @@ def apply_view(collection, view_name):
     """
     skip = 0
     results_pending = True
+    window_size = VIEW_WINDOW_SIZE
+    log.info('applying saved view {} with page size {}'.format(
+        view_name,
+        window_size))
     while results_pending:
         """ query database collection with stored view for a limited number
             of results """
-        view_result = collection.view(view_name, skip=skip, limit=VIEW_WINDOW_SIZE)
+        view_result = collection.view(view_name, skip=skip, limit=window_size)
         """ see if we need to query the view another time:
             i.e. if we have less results than set limit """
+            #TODO handle MemoryError
         results_pending = skip + len(view_result.rows) < view_result.total_rows
         """ move window for upcoming query invocation """
-        skip += VIEW_WINDOW_SIZE
+        skip += window_size
         """ produce results """
         for row in view_result.rows:
             if row.value:
@@ -160,25 +168,41 @@ def apply_temp_view(collection, view_function):
     """ takes a view function as a string and applies it to the collection.
     Is a generator that returns either the object emitted by the view function,
     or the id of each documents in the results (whatever applicable).
+
+    :param collection: the collection to be queried
+    :type collection: :class:`couchdb.Database`
+    :returns: an interator over the view results
+    :rtype: generator
     """
     skip = 0
     results_pending = True
+    window_size = VIEW_WINDOW_SIZE
+    log.info('applying temporary view with page size {}'.format(window_size))
     while results_pending:
         """ query database collection with temporary view for limited number
             of results """
         try:
             view_result = collection.query(
-                view_function, skip=skip, limit=VIEW_WINDOW_SIZE
+                view_function, skip=skip, limit=window_size
             )
             """ see if we need to query the view another time:
                 i.e. if we have less results than set limit """
             results_pending = skip + len(view_result.rows) < view_result.total_rows
+            if window_size < VIEW_WINDOW_SIZE:
+                window_size += window_size // 10
         except couchdb.http.ServerError as e:
             raise ValueError("server cannot execute view")
             return
+        except MemoryError as e:
+            if window_size > 4:
+                """ make window smaller and try again """
+                window_size //= 4
+                log.warn('adjusting window size: {}'.format(window_size))
+                continue
+            raise(e)
 
         """ move window for upcoming query invocation """
-        skip += VIEW_WINDOW_SIZE
+        skip += window_size
         """ produce results """
         for row in view_result.rows:
             if row.value:
@@ -212,7 +236,7 @@ def retrieve_public_documents(collection):
         if row.id:
             yield collection[row.id]
             if pb:
-                progressbar.update(1)
+                pb.update(1)
 
 
 def public_corpora_of_project(server, prefix):
