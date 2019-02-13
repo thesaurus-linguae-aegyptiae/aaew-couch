@@ -76,7 +76,12 @@ _temp_view_published_docs_template = """function(doc) {{
 
 def list_views(collection):
     """ finds a given collection's `_design`-docs and extracts the view names
-    found inside of them.  """
+    found inside of them.
+
+    :param collection: couchdb collection
+    :type collection: :class:`couchdb.Database`
+    :rtype: list
+    """
     desdocs = [collection[name] for name in collection if name.startswith("_design/")]
     views = []
     for doc in desdocs:
@@ -87,17 +92,22 @@ def list_views(collection):
 
 def temp_view_published_docs(eclass, *fields):
     """ Returns a temporary view function string that can be used to retrieve
-    all published documents with a specified `eClass`-suffix from a
-    collection.
+    all published documents with a specified ``eClass``-suffix from a
+    collection (i.e. ``BTSLemmaEntry``).
 
-    By default, only the `doc.id` field is being selected by this view
-    function.  To receive a different selection of `doc` fields, those can be
-    specified as string value parameters in arbitrary numbers. `doc.id` will
+    By default, only the ``doc.id`` field is being selected by this view
+    function.  To receive a different selection of ``doc`` fields, those can be
+    specified as string value parameters in arbitrary numbers. ``doc.id`` will
     be selected no matter what tho. The fields to be selected have to start
     with '`doc`', but that means that it is also possible to request the whole
     document.
 
-    The returned view function string can be used with `apply_temp_view`. """
+    The returned view function string can be used with :ref:`apply_temp_view`.
+
+    :param eclass: class part in EMF eClass URL string (last segment)
+    :type eclass: string
+    :rtype: string
+    """
     return _temp_view_published_docs_template.format(
         eclass,
         " || ".join(
@@ -120,6 +130,10 @@ def temp_view_published_docs(eclass, *fields):
 
 def apply_view(collection, view_name):
     """ applies collection-internal view to collection and returns generator.
+
+    :param collection: couchdb collection
+    :type collection: :class:`couchdb.Database`
+    :rtype: generator
     """
     skip = 0
     results_pending = True
@@ -155,6 +169,10 @@ def view_result_count(collection, view):
     Both view names and view functions can be passed. The function determines
     what the parameter value actually is by looking it up in the collection's
     view list.
+
+    :param collection: couchdb collection
+    :type collection: :class:`couchdb.Database`
+    :rtype: int
     """
     func = collection.view if view in list_views(collection) else collection.query
     try:
@@ -229,6 +247,10 @@ def retrieve_public_documents(collection):
     Returns a generator that downloads each document one by one, which is
     preposterously slow, but makes sure that huge corpora won't cause heap
     overflows.
+
+    :paran collection: couchdb collection
+    :type collection: :class:`couchdb.Database`
+    :rtype: generator
     """
     view = collection.query(TEMP_VIEW_PUB_DOC_IDS)
     pb = tqdm(total=view.total_rows, desc=collection.name) if TQDM else None
