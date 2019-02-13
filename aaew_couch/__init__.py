@@ -50,7 +50,7 @@ def connect(url, auth_file=None, user=None, passwd=None):
 PUBLIC_REVISIONSTATES = [
     "published",
     "transformed_awaiting_update",
-    "published-awaiting-update",
+    "published-awaiting-review",
     "published-obsolete",
 ]
 
