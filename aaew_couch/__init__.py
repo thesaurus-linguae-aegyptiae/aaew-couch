@@ -3,7 +3,7 @@ import json
 import logging
 import couchdb
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARN)
 log = logging.getLogger(__name__)
 
 try:
@@ -74,7 +74,7 @@ _temp_view_published_docs_template = """function(doc) {{
 }}"""
 
 
-def list_views(collection):
+def list_views(collection) -> list:
     """ finds a given collection's `_design`-docs and extracts the view names
     found inside of them.
 
@@ -128,17 +128,18 @@ def temp_view_published_docs(eclass, *fields):
     )
 
 
-def apply_view(collection, view_name):
+def apply_view(collection, view_name: str):
     """ applies collection-internal view to collection and returns generator.
 
     :param collection: couchdb collection
     :type collection: :class:`couchdb.Database`
+    :param view_name: name of a view that must exist in the collection
     :rtype: generator
     """
     skip = 0
     results_pending = True
     window_size = VIEW_WINDOW_SIZE
-    log.info('applying saved view {} with page size {}'.format(
+    log.debug('applying saved view {} with page size {}'.format(
         view_name,
         window_size))
     while results_pending:
@@ -162,7 +163,7 @@ def apply_view(collection, view_name):
 
 
 #XXX problem: only possible as admin
-def view_result_count(collection, view):
+def view_result_count(collection, view: str) -> int:
     """ Returns the number of rows that would be returned when a given view
     is queried on that database collection.
 
@@ -172,7 +173,8 @@ def view_result_count(collection, view):
 
     :param collection: couchdb collection
     :type collection: :class:`couchdb.Database`
-    :rtype: int
+    :param view: view name or function
+    :returns: result count or -1
     """
     func = collection.view if view in list_views(collection) else collection.query
     try:
@@ -195,7 +197,7 @@ def apply_temp_view(collection, view_function):
     skip = 0
     results_pending = True
     window_size = VIEW_WINDOW_SIZE
-    log.info('applying temporary view with page size {}'.format(window_size))
+    log.debug('applying temporary view with page size {}'.format(window_size))
     while results_pending:
         """ query database collection with temporary view for limited number
             of results """
@@ -231,9 +233,13 @@ def apply_temp_view(collection, view_function):
                 yield row.id
 
 
-def is_document_public(document):
+def is_document_public(document: dict) -> bool:
     """ checks whether document `visibility` and `revisionState` match
-    requirements to be considered ready for publication. """
+    requirements to be considered ready for publication.
+
+    :param document: couchdb document
+    :returns: whether visibility and revision state qualify for publication
+    """
     if document.get("visibility") == "public":
         return document.get("revisionState") in PUBLIC_REVISIONSTATES
     return False
