@@ -49,7 +49,7 @@ def connect(url, auth_file=None, user=None, passwd=None):
 
 PUBLIC_REVISIONSTATES = [
     "published",
-    "transformed_awaiting_update",
+   # "transformed_awaiting_update", can be removed probably
     "published-awaiting-review",
     "published-obsolete",
     "archived-published-obsolete",
