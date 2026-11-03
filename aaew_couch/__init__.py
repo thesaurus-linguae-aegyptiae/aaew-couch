@@ -53,6 +53,7 @@ PUBLIC_REVISIONSTATES = [
     "published-awaiting-review",
     "published-obsolete",
     "archived-published-obsolete",
+    "reconstructed",
 ]
 
 """ can be used as a temporary view that retrieves all published documents from a collection. """
